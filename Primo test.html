@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Traduttore semplice</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f5f5f5;
+      color: #333;
+    }
+    header {
+      background: #4CAF50;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    nav {
+      background: #333;
+      padding: 10px;
+      text-align: center;
+    }
+    nav a {
+      color: white;
+      margin: 0 15px;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    nav a:hover {
+      text-decoration: underline;
+    }
+    main {
+      padding: 20px;
+      max-width: 900px;
+      margin: 20px auto;
+      background: white;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    label { display: block; margin: 12px 0 6px; font-weight: bold; }
+    textarea { width: 100%; min-height: 120px; padding: 10px; resize: vertical; }
+    select, button {
+      padding: 8px 12px;
+      font-size: 14px;
+      margin-right: 8px;
+    }
+    .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+    .result {
+      margin-top: 12px;
+      padding: 12px;
+      background: #fafafa;
+      border: 1px solid #eee;
+      border-radius: 4px;
+      min-height: 80px;
+      white-space: pre-wrap;
+    }
+    footer {
+      background: #333;
+      color: white;
+      text-align: center;
+      padding: 10px;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+    }
+    .small { font-size: 13px; color: #666; margin-top: 8px; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Traduttore semplice</h1>
+    <p>Traduci testo rapidamente usando LibreTranslate 🌐</p>
+  </header>
+
+  <nav>
+    <a href="#">Home</a>
+    <a href="#">Chi sono</a>
+    <a href="#">Contatti</a>
+  </nav>
+
+  <main>
+    <h2>Inserisci testo da tradurre</h2>
+
+    <label for="source">Testo sorgente</label>
+    <textarea id="source" placeholder="Scrivi o incolla il testo qui...">Ciao, come stai?</textarea>
+
+    <div class="controls">
+      <div>
+        <label for="sourceLang">Da</label>
+        <select id="sourceLang">
+          <option value="auto">Rileva lingua (auto)</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="targetLang">A</label>
+        <select id="targetLang">
+        </select>
+      </div>
+
+      <div style="align-self:end;">
+        <button id="translateBtn">Traduci</button>
+        <button id="swapBtn" title="Scambia le lingue">Scambia</button>
+      </div>
+    </div>
+
+    <div class="small">Nota: se l'API pubblica non risponde puoi cambiare l'endpoint nello script.</div>
+
+    <h3>Risultato</h3>
+    <div id="result" class="result">Il risultato apparirà qui.</div>
+
+  </main>
+
+  <footer>
+    <p>© 2025 Il mio sito - Tutti i diritti riservati</p>
+  </footer>
+
+  <script>
+    // Lista di endpoint di fallback (modifica se hai una tua istanza)
+    const ENDPOINTS = [
+      'https://libretranslate.de',
+      'https://translate.argosopentech.com'
+    ];
+
+    const TIMEOUT_MS = 10000; // timeout fetch
+
+    const sourceEl = document.getElementById('source');
+    const sourceLangEl = document.getElementById('sourceLang');
+    const targetLangEl = document.getElementById('targetLang');
+    const translateBtn = document.getElementById('translateBtn');
+    const swapBtn = document.getElementById('swapBtn');
+    const resultEl = document.getElementById('result');
+
+    // wrapper che prova più endpoint e applica timeout
+    async function tryEndpoints(path, options = {}) {
+      let lastErr = null;
+      for (const base of ENDPOINTS) {
+        const url = base + path;
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), TIMEOUT_MS);
+        try {
+          const res = await fetch(url, { ...options, signal: controller.signal });
+          clearTimeout(id);
+          if (!res.ok) {
+            lastErr = new Error('HTTP ' + res.status + ' from ' + base);
+            continue;
+          }
+          return { res, base };
+        } catch (err) {
+          clearTimeout(id);
+          lastErr = err;
+          // continua al prossimo endpoint
+        }
+      }
+      throw lastErr || new Error('Nessun endpoint disponibile');
+    }
+
+    async function loadLanguages() {
+      try {
+        const { res, base } = await tryEndpoints('/languages');
+        const langs = await res.json();
+        // popola le select
+        langs.forEach(l => {
+          const opt1 = document.createElement('option');
+          opt1.value = l.code;
+          opt1.textContent = l.name + ' (' + l.code + ')';
+          sourceLangEl.appendChild(opt1);
+
+          const opt2 = opt1.cloneNode(true);
+          targetLangEl.appendChild(opt2);
+        });
+        // default target italiano
+        if ([...targetLangEl.options].some(o => o.value === 'it')) {
+          targetLangEl.value = 'it';
+        } else {
+          targetLangEl.selectedIndex = 0;
+        }
+      } catch (err) {
+        console.error('Errore caricamento lingue', err);
+        resultEl.textContent = 'Impossibile caricare le lingue. Motivi possibili: CORS bloccato o server non raggiungibile. Prova un altro endpoint o esegui un\'istanza locale.';
+      }
+    }
+
+    // Se source == 'auto' usa /detect per ottenere la lingua
+    async function detectLanguage(text) {
+      try {
+        const { res } = await tryEndpoints('/detect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ q: text })
+        });
+        const data = await res.json();
+        // risposta tipica: [{language: "en", confidence: 0.7}, ...]
+        if (Array.isArray(data) && data.length > 0 && data[0].language) {
+          return data[0].language;
+        }
+      } catch (err) {
+        console.warn('Detect fallito', err);
+      }
+      return null;
+    }
+
+    async function translate() {
+      const q = sourceEl.value.trim();
+      if (!q) {
+        resultEl.textContent = 'Inserisci del testo da tradurre.';
+        return;
+      }
+      resultEl.textContent = 'Traduzione in corso...';
+
+      try {
+        let source = sourceLangEl.value;
+        const target = targetLangEl.value;
+
+        if (source === 'auto') {
+          const detected = await detectLanguage(q);
+          if (detected) {
+            source = detected;
+          } else {
+            // se non riusciamo a rilevare, lascia vuoto o imposta 'auto' a seconda dell'endpoint
+            source = 'auto';
+          }
+        }
+
+        const body = {
+          q,
+          source,
+          target,
+          format: 'text'
+          // api_key: '...'
+        };
+
+        const { res } = await tryEndpoints('/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        const data = await res.json();
+        // risposta: { translatedText: "..." }
+        if (data && (data.translatedText || data.result)) {
+          resultEl.textContent = data.translatedText || data.result;
+        } else {
+          // fallback a mostrare l'oggetto ricevuto
+          resultEl.textContent = JSON.stringify(data);
+        }
+      } catch (err) {
+        console.error('Errore traduzione', err);
+        if (err.name === 'AbortError') {
+          resultEl.textContent = 'Richiesta scaduta (timeout). Riprova o cambia endpoint.';
+        } else {
+          resultEl.textContent = 'Si è verificato un errore durante la traduzione. Controlla la console per dettagli.';
+        }
+      }
+    }
+
+    translateBtn.addEventListener('click', translate);
+
+    swapBtn.addEventListener('click', () => {
+      const previousSource = sourceLangEl.value;
+      sourceLangEl.value = targetLangEl.value || 'auto';
+      targetLangEl.value = previousSource === 'auto' ? 'en' : previousSource;
+    });
+
+    // invio con Ctrl+Enter
+    sourceEl.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 'Enter') translate();
+    });
+
+    // inizializza
+    loadLanguages();
+  </script>
+
+</body>
+</html>
