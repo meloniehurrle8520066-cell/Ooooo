@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Il mio sito - Pinguini</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f8ff;
+            color: #123;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        header { padding: 30px 0; }
+        h1 {
+            color: #2e8b57;
+            margin: 0;
+        }
+        p {
+            font-size: 18px;
+            color: #333;
+            margin: 8px 0 16px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 12px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+        }
+        .btn:hover { background-color: #45a049; }
+        img.main {
+            margin-top: 20px;
+            border-radius: 10px;
+            width: 200px;
+            height: 160px;
+            object-fit: cover;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Sezione pinguini */
+        #pinguini {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 24px;
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+            text-align: left;
+            display: none; /* nascosta finché non si clicca */
+        }
+        #pinguini h2 { color: #1b6; margin-top: 0; text-align:center; }
+        .gallery { display:flex; flex-wrap:wrap; gap:16px; justify-content:center; margin-top:20px; }
+        .card { background:white; border-radius:8px; padding:8px; box-shadow:0 2px 6px rgba(0,0,0,0.08); width:240px; text-align:center; }
+        .card img { width:100%; border-radius:6px; display:block; }
+        .back { margin-top:20px; padding:10px 16px; background:#4CAF50; color:#fff; border:none; border-radius:6px; cursor:pointer; display:inline-block; }
+        .back:hover { background:#3e8e41; }
+
+        /* Smooth scroll placeholder if needed */
+        html { scroll-behavior: smooth; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>CIAO A TUTTI SONO LORENZO</h1>
+        <p>QUESTO SITO L'HO CREATO IO</p>
+        <p>Ci ho messo un giorno perché non mi ricordavo nulla 😅😅</p>
+
+        <!-- Bottone: apre la pagina wiki sui pinguini in una nuova scheda -->
+        <a class="btn" id="showPenguinsBtn" href="https://it.wikipedia.org/wiki/Pinguino" target="_blank" rel="noopener">Cliccami!</a>
+
+        <!-- Immagine di anteprima -->
+        <img class="main" src="https://upload.wikimedia.org/wikipedia/commons/0/0b/Emperor_Penguin_Manchot_empereur.jpg" alt="Un pinguino">
+    </header>
+
+    <!-- Sezione pinguini inclusa nello stesso file (opzionale, nascosta) -->
+    <section id="pinguini" aria-hidden="true">
+        <h2>Pagina dei pinguini</h2>
+        <p style="text-align:center;">Ecco alcune immagini di pinguini — usa il pulsante per tornare alla home.</p>
+
+        <div class="gallery" role="list">
+            <div class="card" role="listitem">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/0/0b/Emperor_Penguin_Manchot_empereur.jpg" alt="Pinguino imperatore">
+                <p>Pinguino imperatore</p>
+            </div>
+
+            <div class="card" role="listitem">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/1/1f/King_Penguin_%28Aptenodytes_patagonicus%29_%281%29.jpg" alt="Pinguino reale">
+                <p>Pinguino reale</p>
+            </div>
+
+            <div class="card" role="listitem">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/5b/Adelie_penguins_and_parents.jpg" alt="Pinguini Adelie">
+                <p>Pinguini Adelie</p>
+            </div>
+
+            <div class="card" role="listitem">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/3/3e/Blue_penguin%2C_Oamaru.jpg" alt="Pinguino azzurro">
+                <p>Pinguino azzurro</p>
+            </div>
+        </div>
+
+        <div style="text-align:center;">
+            <button class="back" id="backBtn">Torna indietro</button>
+        </div>
+    </section>
+
+    <script>
+        // Se vuoi mantenere la sezione interna nascosta/visibile solo con il bottone "Torna indietro",
+        // il pulsante principale ora apre Wikipedia; qui gestiamo solo "Torna indietro" se la sezione viene mostrata manualmente.
+        const backBtn = document.getElementById('backBtn');
+        backBtn.addEventListener('click', () => {
+            const section = document.getElementById('pinguini');
+            section.style.display = 'none';
+            section.setAttribute('aria-hidden', 'true');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    </script>
+</body>
+</html>
+
+
